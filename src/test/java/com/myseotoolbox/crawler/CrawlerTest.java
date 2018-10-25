@@ -13,6 +13,7 @@ import java.net.URI;
 import java.util.function.Consumer;
 
 import static junit.framework.TestCase.fail;
+import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -57,7 +58,7 @@ public class CrawlerTest implements CrawlerUnitTest {
     }
 
     @Test
-    public void shouldManageExternalLinks() {
+    public void shouldVisitExternalLinks() {
         givenWebsite(TEST_WEBSITE_ROOT)
                 .whereTheRootPage()
                 .hasLinkTo("http://another-domain").build();
@@ -70,7 +71,7 @@ public class CrawlerTest implements CrawlerUnitTest {
     }
 
     @Test
-    public void shouldVisitSamePageMoreThanOnce() {
+    public void shouldNotVisitSamePageMoreThanOnce() {
         givenWebsite(TEST_WEBSITE_ROOT)
                 .whereTheRootPage()
                 .hasLinkTo("/page1")
@@ -81,12 +82,35 @@ public class CrawlerTest implements CrawlerUnitTest {
         sut.run(listener);
 
         verify(listener, times(1)).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
-
     }
 
     @Test
     public void shouldNotConsiderFragment() {
-        fail();
+        givenWebsite(TEST_WEBSITE_ROOT)
+                .whereTheRootPage()
+                .hasLinkTo("/page1#fragment1")
+                .hasLinkTo("/page1#fragment2").build();
+
+        sut.addSeed(URI.create(TEST_WEBSITE_ROOT));
+        sut.run(listener);
+
+        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
+        verify(listener, times(1)).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
+    }
+
+    @Test
+    public void shouldConsiderParametersAsDifferentPages() {
+        givenWebsite(TEST_WEBSITE_ROOT)
+                .whereTheRootPage()
+                .hasLinkTo("/page1?param=A")
+                .hasLinkTo("/page1?param=B").build();
+
+        sut.addSeed(URI.create(TEST_WEBSITE_ROOT));
+        sut.run(listener);
+
+        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
+        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1?param=A"));
+        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1?param=B"));
     }
 
     @Override

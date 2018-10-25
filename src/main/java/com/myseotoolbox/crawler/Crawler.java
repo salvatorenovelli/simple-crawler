@@ -17,7 +17,7 @@ import static com.myseotoolbox.utils.StreamUtils.not;
 public class Crawler {
 
 
-    private final Queue<URI> toVisit = new LinkedList<>();
+    private final Queue<URI> queue = new LinkedList<>();
     private final Set<URI> visited = new HashSet<>();
     private final HttpClient httpClient;
 
@@ -30,19 +30,25 @@ public class Crawler {
      */
     public void run(Consumer<HttpResponse> listener) {
 
-        while (!toVisit.isEmpty()) {
-            URI u = toVisit.poll();
+        while (!queue.isEmpty()) {
+            URI curUri = queue.poll();
 
-            HttpResponse response = visit(u);
+            if (!alreadyVisited(curUri)) {
+                HttpResponse response = visit(curUri);
 
-            discoverNewLinks(response);
-            listener.accept(response);
+                discoverNewLinks(response);
+                listener.accept(response);
+            }
         }
 
     }
 
     public void addSeed(URI uri) {
-        toVisit.add(uri);
+        addUriToQueue(uri);
+    }
+
+    private void addUriToQueue(URI uri) {
+        queue.add(removeFragment(uri));
     }
 
     private HttpResponse visit(URI uri) {
@@ -58,11 +64,19 @@ public class Crawler {
 
             pageLinks.stream()
                     .map(uri -> toAbsoluteUri(httpResponse.getRequestUri(), uri))
-                    .filter(not(visited::contains))
-                    .map(responseLocation -> toAbsoluteUri(httpResponse.getRequestUri(), responseLocation))
-                    .forEach(toVisit::add);
+                    .map(this::removeFragment)
+                    .filter(not(this::alreadyVisited))
+                    .forEach(this::addUriToQueue);
         }
 
+    }
+
+    private boolean alreadyVisited(URI uri) {
+        return visited.contains(uri);
+    }
+
+    private URI removeFragment(URI uri) {
+        return URI.create(uri.toASCIIString().split("#")[0]);
     }
 
     private URI toAbsoluteUri(URI requestUri, URI responseLocation) {
