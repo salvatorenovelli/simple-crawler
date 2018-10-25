@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verify;
 
 
 @RunWith(MockitoJUnitRunner.class)
-public class CrawlerTest implements CrawlerUnitTest {
+public class CrawlerTest {
 
     public static final String TEST_WEBSITE_ROOT = "http://somedomain";
     public static final int ONCE = 1;
@@ -29,7 +29,7 @@ public class CrawlerTest implements CrawlerUnitTest {
 
     @Test
     public void shouldDoBasicCrawling() {
-        givenWebsite(TEST_WEBSITE_ROOT)
+        Crawler sut = givenWebsite(TEST_WEBSITE_ROOT)
                 .whereTheRootPage()
                 .hasLinkTo("/page1")
                 .hasLinkTo("/page2").build();
@@ -44,7 +44,7 @@ public class CrawlerTest implements CrawlerUnitTest {
 
     @Test
     public void shouldDoNestedCrawling() {
-        givenWebsite(TEST_WEBSITE_ROOT)
+        Crawler sut = givenWebsite(TEST_WEBSITE_ROOT)
                 .whereTheRootPage()
                 .hasLinkTo("/page1")
                 .and("/page1")
@@ -60,7 +60,7 @@ public class CrawlerTest implements CrawlerUnitTest {
 
     @Test
     public void shouldVisitExternalLinks() {
-        givenWebsite(TEST_WEBSITE_ROOT)
+        Crawler sut = givenWebsite(TEST_WEBSITE_ROOT)
                 .whereTheRootPage()
                 .hasLinkTo("http://another-domain").build();
 
@@ -73,7 +73,7 @@ public class CrawlerTest implements CrawlerUnitTest {
 
     @Test
     public void shouldNotVisitSamePageMoreThanOnce() {
-        givenWebsite(TEST_WEBSITE_ROOT)
+        Crawler sut = givenWebsite(TEST_WEBSITE_ROOT)
                 .whereTheRootPage()
                 .hasLinkTo("/page1")
                 .and("/page1")
@@ -87,7 +87,7 @@ public class CrawlerTest implements CrawlerUnitTest {
 
     @Test
     public void shouldNotConsiderFragment() {
-        givenWebsite(TEST_WEBSITE_ROOT)
+        Crawler sut = givenWebsite(TEST_WEBSITE_ROOT)
                 .whereTheRootPage()
                 .hasLinkTo("/page1#fragment1")
                 .hasLinkTo("/page1#fragment2").build();
@@ -101,7 +101,7 @@ public class CrawlerTest implements CrawlerUnitTest {
 
     @Test
     public void shouldConsiderParametersAsDifferentPages() {
-        givenWebsite(TEST_WEBSITE_ROOT)
+        Crawler sut = givenWebsite(TEST_WEBSITE_ROOT)
                 .whereTheRootPage()
                 .hasLinkTo("/page1?param=A")
                 .hasLinkTo("/page1?param=B").build();
@@ -114,10 +114,6 @@ public class CrawlerTest implements CrawlerUnitTest {
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1?param=B"));
     }
 
-    @Override
-    public void initializeCrawlerUnderTest(HttpClient client) {
-        this.sut = new Crawler(client);
-    }
 
     private HttpResponse aResponseForUri(String uri) {
         return ArgumentMatchers.argThat(argument -> argument.getLocation().equals(URI.create(uri)));
@@ -125,7 +121,7 @@ public class CrawlerTest implements CrawlerUnitTest {
 
     //parameter domainRoot ignored. Provided for readability
     private TestWebsiteBuilder givenWebsite(String domainRoor) {
-        return new TestWebsiteBuilder(this);
+        return new TestWebsiteBuilder();
     }
 
 }

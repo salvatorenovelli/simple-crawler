@@ -76,6 +76,7 @@ public class Crawler {
     }
 
     private URI removeFragment(URI uri) {
+        if (uri.getFragment() == null) return uri;
         return URI.create(uri.toASCIIString().split("#")[0]);
     }
 

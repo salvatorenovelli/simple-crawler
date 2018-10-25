@@ -14,12 +14,8 @@ import java.util.stream.Collectors;
 class TestWebsiteBuilder {
 
     private final Map<String, List<String>> links = new HashMap<>();
-    private final CrawlerUnitTest test;
     private String currentPosition;
 
-    public TestWebsiteBuilder(CrawlerUnitTest crawlerTest) {
-        this.test = crawlerTest;
-    }
 
     public TestWebsiteBuilder whereTheRootPage() {
         currentPosition = "";
@@ -36,14 +32,14 @@ class TestWebsiteBuilder {
         return this;
     }
 
-    public void build() {
+    public Crawler build() {
         HttpClient mockClient = uri -> {
             List<URI> collect = getPageLinks(uri.getPath()).stream().map(URI::create).collect(Collectors.toList());
             Page page = new Page(collect);
             return new HttpResponse(uri, 200, uri, page);
         };
 
-        this.test.initializeCrawlerUnderTest(mockClient);
+        return new Crawler(mockClient);
     }
 
     private List<String> getPageLinks(String url) {
