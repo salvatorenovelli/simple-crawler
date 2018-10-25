@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 public class CrawlerTest implements CrawlerUnitTest {
 
     public static final String TEST_WEBSITE_ROOT = "http://somedomain";
+    public static final int ONCE = 1;
     @Mock private Consumer<HttpResponse> listener;
 
     Crawler sut;
@@ -81,7 +82,7 @@ public class CrawlerTest implements CrawlerUnitTest {
         sut.addSeed(URI.create(TEST_WEBSITE_ROOT));
         sut.run(listener);
 
-        verify(listener, times(1)).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
+        verify(listener, times(ONCE)).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
     }
 
     @Test
@@ -95,7 +96,7 @@ public class CrawlerTest implements CrawlerUnitTest {
         sut.run(listener);
 
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
-        verify(listener, times(1)).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
+        verify(listener, times(ONCE)).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
     }
 
     @Test
