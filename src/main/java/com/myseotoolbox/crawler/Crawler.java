@@ -33,12 +33,10 @@ public class Crawler {
         while (!queue.isEmpty()) {
             URI curUri = queue.poll();
 
-            if (!alreadyVisited(curUri)) {
-                HttpResponse response = visit(curUri);
+            HttpResponse response = visit(curUri);
 
-                discoverNewLinks(response);
-                listener.accept(response);
-            }
+            enqueueNewLinks(response);
+            listener.accept(response);
         }
 
     }
@@ -56,7 +54,7 @@ public class Crawler {
         return httpClient.get(uri);
     }
 
-    private void discoverNewLinks(HttpResponse httpResponse) {
+    private void enqueueNewLinks(HttpResponse httpResponse) {
 
         if (httpResponse.getHttpStatus() == HttpStatus.SC_OK) {
 
@@ -65,14 +63,14 @@ public class Crawler {
             pageLinks.stream()
                     .map(uri -> toAbsoluteUri(httpResponse.getRequestUri(), uri))
                     .map(this::removeFragment)
-                    .filter(not(this::alreadyVisited))
+                    .filter(not(this::duplicate))
                     .forEach(this::addUriToQueue);
         }
 
     }
 
-    private boolean alreadyVisited(URI uri) {
-        return visited.contains(uri);
+    private boolean duplicate(URI uri) {
+        return visited.contains(uri) || queue.contains(uri);
     }
 
     private URI removeFragment(URI uri) {
