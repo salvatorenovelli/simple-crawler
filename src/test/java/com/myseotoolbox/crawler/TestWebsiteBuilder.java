@@ -1,5 +1,6 @@
 package com.myseotoolbox.crawler;
 
+import com.myseotoolbox.crawler.http.HttpClient;
 import com.myseotoolbox.crawler.http.HttpResponse;
 import com.myseotoolbox.crawler.model.Page;
 
@@ -36,12 +37,13 @@ class TestWebsiteBuilder {
     }
 
     public void build() {
-        this.test.initializeCrawlerUnderTest(
-                uri -> {
-                    List<URI> collect = getPageLinks(uri.getPath()).stream().map(URI::create).collect(Collectors.toList());
-                    Page page = new Page(collect);
-                    return new HttpResponse(uri, 200, uri, page);
-                });
+        HttpClient mockClient = uri -> {
+            List<URI> collect = getPageLinks(uri.getPath()).stream().map(URI::create).collect(Collectors.toList());
+            Page page = new Page(collect);
+            return new HttpResponse(uri, 200, uri, page);
+        };
+
+        this.test.initializeCrawlerUnderTest(mockClient);
     }
 
     private List<String> getPageLinks(String url) {

@@ -13,6 +13,7 @@ import java.net.URI;
 import java.util.function.Consumer;
 
 import static junit.framework.TestCase.fail;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 
@@ -74,7 +75,13 @@ public class CrawlerTest implements CrawlerUnitTest {
                 .whereTheRootPage()
                 .hasLinkTo("/page1")
                 .and("/page1")
-                .hasLinkTo("/page2").build();
+                .hasLinkTo("/page1").build();
+
+        sut.addSeed(URI.create(TEST_WEBSITE_ROOT));
+        sut.run(listener);
+
+        verify(listener, times(1)).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
+
     }
 
     @Test

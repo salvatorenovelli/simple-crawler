@@ -57,6 +57,7 @@ public class Crawler {
             List<URI> pageLinks = getLinks(httpResponse);
 
             pageLinks.stream()
+                    .map(uri -> toAbsoluteUri(httpResponse.getRequestUri(), uri))
                     .filter(not(visited::contains))
                     .map(responseLocation -> toAbsoluteUri(httpResponse.getRequestUri(), responseLocation))
                     .forEach(toVisit::add);
