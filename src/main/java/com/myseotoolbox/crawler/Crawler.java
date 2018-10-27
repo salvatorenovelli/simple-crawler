@@ -40,10 +40,12 @@ public class Crawler {
         while (!queue.isEmpty()) {
             URI curUri = queue.poll();
 
-            HttpResponse response = visit(curUri);
+            if (shouldVisit(curUri)) {
+                HttpResponse response = visit(curUri);
 
-            enqueueNewLinks(response);
-            listener.accept(response);
+                enqueueNewLinks(response);
+                listener.accept(response);
+            }
         }
 
     }
@@ -100,4 +102,7 @@ public class Crawler {
         }
     }
 
+    private boolean shouldVisit(URI curUri) {
+        return uriFilter.test(curUri);
+    }
 }

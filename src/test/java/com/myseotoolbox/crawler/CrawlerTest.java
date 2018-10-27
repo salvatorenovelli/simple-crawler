@@ -3,6 +3,7 @@ package com.myseotoolbox.crawler;
 
 import com.myseotoolbox.crawler.http.HttpClient;
 import com.myseotoolbox.crawler.http.HttpResponse;
+import com.myseotoolbox.utils.StreamUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
@@ -12,8 +13,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.net.URI;
 import java.util.function.Consumer;
 
+import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -22,7 +25,7 @@ public class CrawlerTest {
     public static final String TEST_WEBSITE_ROOT = "http://somedomain";
     public static final int ONCE = 1;
     @Mock private Consumer<HttpResponse> listener;
-    
+
 
     @Test
     public void shouldDoBasicCrawling() {
@@ -111,6 +114,23 @@ public class CrawlerTest {
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1?param=B"));
     }
 
+
+    @Test
+    public void shouldFilter() {
+        HttpClient mockClient = givenWebsite(TEST_WEBSITE_ROOT)
+                .whereTheRootPage()
+                .hasLinkTo("/page1")
+                .hasLinkTo("/page2").build();
+
+        Crawler sut = new Crawler(mockClient, uri -> !uri.getPath().equals("/page1"));
+        sut.addSeed(URI.create(TEST_WEBSITE_ROOT));
+        sut.run(listener);
+
+
+        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
+        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page2"));
+        verifyNoMoreInteractions(listener);
+    }
 
     private HttpResponse aResponseForUri(String uri) {
         return ArgumentMatchers.argThat(argument -> argument.getLocation().equals(URI.create(uri)));
