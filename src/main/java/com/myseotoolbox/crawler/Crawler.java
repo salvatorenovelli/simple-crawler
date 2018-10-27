@@ -21,15 +21,11 @@ public class Crawler {
     private final Queue<URI> queue = new LinkedList<>();
     private final Set<URI> visited = new HashSet<>();
     private final HttpClient httpClient;
-    private final Predicate<URI> uriFilter;
+    private final Predicate<URI> shouldVisit;
 
-    public Crawler(HttpClient httpClient) {
-        this(httpClient, uri -> true);
-    }
-
-    public Crawler(HttpClient httpClient, Predicate<URI> uriFilter) {
+    public Crawler(HttpClient httpClient, Predicate<URI> shouldVisit) {
         this.httpClient = httpClient;
-        this.uriFilter = uriFilter;
+        this.shouldVisit = shouldVisit;
     }
 
     /**
@@ -40,7 +36,7 @@ public class Crawler {
         while (!queue.isEmpty()) {
             URI curUri = queue.poll();
 
-            if (shouldVisit(curUri)) {
+            if (shouldVisit.test(curUri)) {
                 HttpResponse response = visit(curUri);
 
                 enqueueNewLinks(response);
@@ -73,6 +69,7 @@ public class Crawler {
                     .map(uri -> toAbsoluteUri(httpResponse.getRequestUri(), uri))
                     .map(this::removeFragment)
                     .filter(not(this::duplicate))
+                    .filter(shouldVisit)
                     .forEach(this::addUriToQueue);
         }
 
@@ -100,9 +97,5 @@ public class Crawler {
             log.error("Error while getting links from {}", httpResponse);
             return Collections.emptyList();
         }
-    }
-
-    private boolean shouldVisit(URI curUri) {
-        return uriFilter.test(curUri);
     }
 }

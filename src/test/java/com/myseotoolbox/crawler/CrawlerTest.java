@@ -136,14 +136,14 @@ public class CrawlerTest {
         return ArgumentMatchers.argThat(argument -> argument.getLocation().equals(URI.create(uri)));
     }
 
-    //parameter domainRoot ignored. Provided for readability
 
-    private TestWebsiteBuilder givenWebsite(String domainRoor) {
+    private TestWebsiteBuilder givenWebsite(String domainRoot) {
+        //domainRoot ignored by this implementation of HttpClient. Provided for readability
         return new TestWebsiteBuilder();
     }
 
     private Crawler initCrawler(HttpClient mockClient) {
-        Crawler sut = new Crawler(mockClient);
+        Crawler sut = new Crawler(mockClient, uri -> true);
         sut.addSeed(URI.create(TEST_WEBSITE_ROOT));
         return sut;
     }

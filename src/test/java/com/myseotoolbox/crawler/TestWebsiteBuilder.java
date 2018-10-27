@@ -34,8 +34,8 @@ class TestWebsiteBuilder {
 
     public HttpClient build() {
         HttpClient mockClient = uri -> {
-            List<URI> collect = getPageLinks(uri.getPath()).stream().map(URI::create).collect(Collectors.toList());
-            Page page = new Page(collect);
+            List<URI> links = getPageLinks(uri.getPath()).stream().map(URI::create).collect(Collectors.toList());
+            Page page = new Page(links);
             return new HttpResponse(uri, 200, uri, page);
         };
 
