@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static com.myseotoolbox.utils.StreamUtils.not;
 
@@ -20,9 +21,15 @@ public class Crawler {
     private final Queue<URI> queue = new LinkedList<>();
     private final Set<URI> visited = new HashSet<>();
     private final HttpClient httpClient;
+    private final Predicate<URI> uriFilter;
 
     public Crawler(HttpClient httpClient) {
+        this(httpClient, uri -> true);
+    }
+
+    public Crawler(HttpClient httpClient, Predicate<URI> uriFilter) {
         this.httpClient = httpClient;
+        this.uriFilter = uriFilter;
     }
 
     /**

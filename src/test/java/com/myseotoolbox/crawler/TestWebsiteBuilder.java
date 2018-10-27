@@ -32,14 +32,14 @@ class TestWebsiteBuilder {
         return this;
     }
 
-    public Crawler build() {
+    public HttpClient build() {
         HttpClient mockClient = uri -> {
             List<URI> collect = getPageLinks(uri.getPath()).stream().map(URI::create).collect(Collectors.toList());
             Page page = new Page(collect);
             return new HttpResponse(uri, 200, uri, page);
         };
 
-        return new Crawler(mockClient);
+        return mockClient;
     }
 
     private List<String> getPageLinks(String url) {
