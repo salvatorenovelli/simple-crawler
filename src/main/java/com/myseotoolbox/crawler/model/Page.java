@@ -1,5 +1,7 @@
 package com.myseotoolbox.crawler.model;
 
+import org.jsoup.nodes.Document;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,5 +16,14 @@ public class Page {
 
     public List<URI> getOutboundLinks() {
         return Collections.unmodifiableList(outboundLinks);
+    }
+
+
+    /**
+     * Expose the underlying data structure
+     *
+     * */
+    public Document getDocument() {
+        throw new UnsupportedOperationException("Not implemented yet!");
     }
 }

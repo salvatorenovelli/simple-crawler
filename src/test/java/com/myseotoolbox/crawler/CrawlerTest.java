@@ -2,8 +2,7 @@ package com.myseotoolbox.crawler;
 
 
 import com.myseotoolbox.crawler.http.HttpClient;
-import com.myseotoolbox.crawler.http.HttpResponse;
-import com.myseotoolbox.utils.StreamUtils;
+import com.myseotoolbox.crawler.model.HttpResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;

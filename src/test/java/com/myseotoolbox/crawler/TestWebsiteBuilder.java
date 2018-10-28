@@ -1,7 +1,7 @@
 package com.myseotoolbox.crawler;
 
 import com.myseotoolbox.crawler.http.HttpClient;
-import com.myseotoolbox.crawler.http.HttpResponse;
+import com.myseotoolbox.crawler.model.HttpResponse;
 import com.myseotoolbox.crawler.model.Page;
 
 import java.net.URI;

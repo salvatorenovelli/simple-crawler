@@ -1,7 +1,7 @@
 package com.myseotoolbox.crawler;
 
 import com.myseotoolbox.crawler.http.HttpClient;
-import com.myseotoolbox.crawler.http.HttpResponse;
+import com.myseotoolbox.crawler.model.HttpResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
 

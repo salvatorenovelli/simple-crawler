@@ -1,4 +1,4 @@
-package com.myseotoolbox.crawler.http;
+package com.myseotoolbox.crawler.model;
 
 import com.myseotoolbox.crawler.model.Page;
 import lombok.Getter;
