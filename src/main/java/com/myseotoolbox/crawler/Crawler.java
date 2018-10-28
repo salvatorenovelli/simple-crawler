@@ -17,13 +17,14 @@ import static com.myseotoolbox.utils.StreamUtils.not;
 @Slf4j
 public class Crawler {
 
-
-    private final Queue<URI> queue = new LinkedList<>();
+    private final Queue<URI> toVisit = new LinkedList<>();
     private final Set<URI> visited = new HashSet<>();
+    private final Consumer<HttpResponse> listener;
     private final HttpClient httpClient;
     private final Predicate<URI> shouldVisit;
 
-    public Crawler(HttpClient httpClient, Predicate<URI> shouldVisit) {
+    public Crawler(Consumer<HttpResponse> listener, HttpClient httpClient, Predicate<URI> shouldVisit) {
+        this.listener = listener;
         this.httpClient = httpClient;
         this.shouldVisit = shouldVisit;
     }
@@ -31,10 +32,10 @@ public class Crawler {
     /**
      * Blocking!
      */
-    public void run(Consumer<HttpResponse> listener) {
+    public void run() {
 
-        while (!queue.isEmpty()) {
-            URI curUri = queue.poll();
+        while (!toVisit.isEmpty()) {
+            URI curUri = toVisit.poll();
 
             if (shouldVisit.test(curUri)) {
                 HttpResponse response = visit(curUri);
@@ -51,7 +52,7 @@ public class Crawler {
     }
 
     private void addUriToQueue(URI uri) {
-        queue.add(removeFragment(uri));
+        toVisit.add(removeFragment(uri));
     }
 
     private HttpResponse visit(URI uri) {
@@ -76,7 +77,7 @@ public class Crawler {
     }
 
     private boolean duplicate(URI uri) {
-        return visited.contains(uri) || queue.contains(uri);
+        return visited.contains(uri) || toVisit.contains(uri);
     }
 
     private URI removeFragment(URI uri) {

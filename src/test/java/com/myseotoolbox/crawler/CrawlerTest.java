@@ -35,7 +35,7 @@ public class CrawlerTest {
                 .hasLinkTo("/page2").build();
 
         Crawler sut = initCrawler(mockClient);
-        sut.run(listener);
+        sut.run();
 
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
@@ -51,7 +51,7 @@ public class CrawlerTest {
                 .hasLinkTo("/page2").build();
 
         Crawler sut = initCrawler(mockClient);
-        sut.run(listener);
+        sut.run();
 
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
@@ -65,7 +65,7 @@ public class CrawlerTest {
                 .hasLinkTo("http://another-domain").build();
 
         Crawler sut = initCrawler(mockClient);
-        sut.run(listener);
+        sut.run();
 
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
         verify(listener).accept(aResponseForUri("http://another-domain"));
@@ -80,7 +80,7 @@ public class CrawlerTest {
                 .hasLinkTo("/page1").build();
 
         Crawler sut = initCrawler(mockClient);
-        sut.run(listener);
+        sut.run();
 
         verify(listener, times(ONCE)).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
     }
@@ -93,7 +93,7 @@ public class CrawlerTest {
                 .hasLinkTo("/page1#fragment2").build();
 
         Crawler sut = initCrawler(mockClient);
-        sut.run(listener);
+        sut.run();
 
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
         verify(listener, times(ONCE)).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
@@ -107,7 +107,7 @@ public class CrawlerTest {
                 .hasLinkTo("/page1?param=B").build();
 
         Crawler sut = initCrawler(mockClient);
-        sut.run(listener);
+        sut.run();
 
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1?param=A"));
@@ -122,9 +122,9 @@ public class CrawlerTest {
                 .hasLinkTo("/page1")
                 .hasLinkTo("/page2").build();
 
-        Crawler sut = new Crawler(mockClient, uri -> !uri.getPath().equals("/page1"));
+        Crawler sut = new Crawler(listener, mockClient, uri -> !uri.getPath().equals("/page1"));
         sut.addSeed(URI.create(TEST_WEBSITE_ROOT));
-        sut.run(listener);
+        sut.run();
 
 
         verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
@@ -143,7 +143,7 @@ public class CrawlerTest {
     }
 
     private Crawler initCrawler(HttpClient mockClient) {
-        Crawler sut = new Crawler(mockClient, uri -> true);
+        Crawler sut = new Crawler(listener, mockClient, uri -> true);
         sut.addSeed(URI.create(TEST_WEBSITE_ROOT));
         return sut;
     }
