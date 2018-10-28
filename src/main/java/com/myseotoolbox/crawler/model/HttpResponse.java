@@ -1,6 +1,5 @@
 package com.myseotoolbox.crawler.model;
 
-import com.myseotoolbox.crawler.model.Page;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -9,15 +8,15 @@ import java.net.URI;
 
 @Getter
 @ToString(doNotUseGetters = true)
-public class HttpResponse {
+public class HttpResponse<T extends Page> {
 
     private final URI requestUri;
     private final int httpStatus;
     private final URI location;
-    private final Page page;
+    private final T page;
     private IOException possibleException;
 
-    public HttpResponse(URI requestUri, int httpStatus, URI location, Page page) {
+    public HttpResponse(URI requestUri, int httpStatus, URI location, T page) {
         this.requestUri = requestUri;
         this.httpStatus = httpStatus;
         this.location = location;
@@ -33,7 +32,7 @@ public class HttpResponse {
         return location;
     }
 
-    public Page getPage() throws IOException {
+    public T getPage() throws IOException {
         if (possibleException != null) {
             throw possibleException;
         }
