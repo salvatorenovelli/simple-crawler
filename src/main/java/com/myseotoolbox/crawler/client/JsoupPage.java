@@ -2,27 +2,34 @@ package com.myseotoolbox.crawler.client;
 
 import com.myseotoolbox.crawler.model.Page;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class JsoupPage implements Page {
-    private final List<URI> outboundLinks = new ArrayList<>();
 
-    public JsoupPage(List<URI> links) {
-        this.outboundLinks.addAll(links);
+    private final Document document;
+
+    public JsoupPage(Document document) {
+        this.document = document;
     }
 
     public List<URI> getOutboundLinks() {
-        return Collections.unmodifiableList(outboundLinks);
+        return extractFromTag(document.body(), "a[href]", element -> element.attr("href"))
+                .stream()
+                .map(URI::create)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Expose the underlying data structure
-     */
-    public Document getDocument() {
-        throw new UnsupportedOperationException("Not implemented yet!");
+
+    private static List<String> extractFromTag(Element element, String filter, Function<Element, String> mapper) {
+        return element
+                .select(filter).stream()
+                .map(mapper)
+                .collect(Collectors.toList());
     }
+
 }
