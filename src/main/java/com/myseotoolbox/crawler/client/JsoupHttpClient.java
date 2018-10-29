@@ -5,9 +5,9 @@ import com.myseotoolbox.crawler.model.HttpResponse;
 
 import java.net.URI;
 
-public class DefaultHttpClient implements HttpClient<JsoupPage> {
+public class JsoupHttpClient implements HttpClient<JsoupPage> {
     @Override
     public HttpResponse<JsoupPage> get(URI uri) {
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet!");
     }
 }
