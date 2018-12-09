@@ -1,10 +1,11 @@
 package com.myseotoolbox.crawler;
 
-import com.myseotoolbox.crawler.http.HttpClient;
 import com.myseotoolbox.crawler.http.HttpResponse;
-
+import com.myseotoolbox.crawler.model.RedirectChain;
+import com.myseotoolbox.crawler.http.RedirectChainScanner;
+import com.myseotoolbox.crawler.http.RedirectLoopException;
+import com.myseotoolbox.crawler.model.WebPage;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpStatus;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,7 +13,6 @@ import org.jsoup.nodes.Element;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import static com.myseotoolbox.utils.StreamUtils.not;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.http.HttpStatus.SC_OK;
 
 
 @Slf4j
@@ -28,18 +29,18 @@ public class Crawler {
 
     private final Queue<URI> toVisit = new LinkedList<>();
     private final Set<URI> visited = new HashSet<>();
-    private final Consumer<CrawledPage> listener;
-    private final HttpClient httpClient;
+    private final Consumer<WebPage> listener;
+    private final RedirectChainScanner scanner;
     private final Predicate<URI> shouldVisit;
 
-    public Crawler(Consumer<CrawledPage> listener, HttpClient httpClient, Predicate<URI> uriFilter) {
+    public Crawler(Consumer<WebPage> listener, RedirectChainScanner scanner, Predicate<URI> uriFilter) {
         this.listener = listener;
-        this.httpClient = httpClient;
+        this.scanner = scanner;
         this.shouldVisit = uriFilter;
     }
 
     /**
-     * Blocking!
+     * Blocking
      */
     public void run() {
 
@@ -47,9 +48,17 @@ public class Crawler {
             URI curUri = toVisit.poll();
 
             if (shouldVisit.test(curUri)) {
-                HttpResponse response = visit(curUri);
-                enqueueNewLinks(curUri, response);
-                listener.accept(new CrawledPage(curUri, null, null));
+
+                RedirectChain chain = visit(curUri);
+                Document document = null;
+
+                if (chain.getLastResponse().getHttpStatus() == SC_OK) {
+                    HttpResponse response = chain.getLastResponse();
+                    document = toJsoupDocument(response.getInputStream(), response.getUri());
+                    enqueueNewLinks(document);
+                }
+
+                listener.accept(new WebPage(curUri, chain, document));
             }
         }
 
@@ -63,31 +72,30 @@ public class Crawler {
         toVisit.add(removeFragment(uri));
     }
 
-    private HttpResponse visit(URI uri) {
-        visited.add(uri);
+    private RedirectChain visit(URI uri) {
         try {
-            return httpClient.get(uri);
-        } catch (IOException | URISyntaxException e) {
+            visited.add(uri);
+            return scanner.analyseRedirectChain(uri);
+        } catch (IOException | RedirectLoopException e) {
             e.printStackTrace();
-            throw new UnsupportedOperationException("Not implemented yet!");
+            //TODO:
+            throw new UnsupportedOperationException("Not implemented yet!" + e);
         }
     }
 
-    private void enqueueNewLinks(URI curUri, HttpResponse httpResponse) {
+    private void enqueueNewLinks(Document document) {
 
-        if (httpResponse.getHttpStatus() == HttpStatus.SC_OK) {
 
-            List<URI> pageLinks = getLinks(httpResponse);
+        List<URI> pageLinks = getOutboundLinks(document);
 
-            pageLinks.stream()
-                    .map(uri -> toAbsoluteUri(curUri, uri))
-                    .map(this::removeFragment)
-                    .filter(not(this::duplicate))
-                    .filter(shouldVisit)
-                    .forEach(this::addUriToQueue);
-        }
-
+        pageLinks.stream()
+                .map(uri -> toAbsoluteUri(document.baseUri(), uri))
+                .map(this::removeFragment)
+                .filter(not(this::duplicate))
+                .filter(shouldVisit)
+                .forEach(this::addUriToQueue);
     }
+
 
     private boolean duplicate(URI uri) {
         return visited.contains(uri) || toVisit.contains(uri);
@@ -98,22 +106,9 @@ public class Crawler {
         return URI.create(uri.toASCIIString().split("#")[0]);
     }
 
-    private URI toAbsoluteUri(URI requestUri, URI responseLocation) {
+    private URI toAbsoluteUri(String requestUri, URI responseLocation) {
         if (responseLocation.isAbsolute()) return responseLocation;
-        return requestUri.resolve(responseLocation);
-    }
-
-    private List<URI> getLinks(HttpResponse httpResponse) {
-
-        try {
-            Document document = toJsoupDocument(httpResponse.getInputStream(), httpResponse.getLocation().toASCIIString());
-            return getOutboundLinks(document);
-
-        } catch (IOException e) {
-            //As we have already checked getHttpStatus, we should not get here
-            log.error("Error while getting links from {}", httpResponse);
-            return Collections.emptyList();
-        }
+        return URI.create(requestUri).resolve(responseLocation);
     }
 
 
@@ -132,7 +127,12 @@ public class Crawler {
                 .collect(Collectors.toList());
     }
 
-    private Document toJsoupDocument(InputStream inputStream, String baseUri) throws IOException {
-        return Jsoup.parse(inputStream, UTF_8.name(), baseUri);
+    private Document toJsoupDocument(InputStream inputStream, URI baseUri) {
+        try {
+            return Jsoup.parse(inputStream, UTF_8.name(), baseUri.toASCIIString());
+        } catch (IOException e) {
+            //TODO
+            throw new UnsupportedOperationException("Not implemented yet!");
+        }
     }
 }

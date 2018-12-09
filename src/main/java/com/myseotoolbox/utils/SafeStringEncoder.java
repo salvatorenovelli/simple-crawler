@@ -1,6 +1,6 @@
-package com.myseotoolbox.crawler.http;
+package com.myseotoolbox.utils;
 
-class SafeStringEncoder {
+public class SafeStringEncoder {
 
 
     private final static char[] hexDigits = {
@@ -11,7 +11,7 @@ class SafeStringEncoder {
     /**
      * Escape non-ascii characters prefixing % without decoding them.
      */
-    static String encodeString(String s) {
+    public static String encodeString(String s) {
 
         int n = s.length();
         if (n == 0)

@@ -1,4 +1,6 @@
-package com.myseotoolbox.crawler;
+package com.myseotoolbox.crawler.http;
+
+import java.util.List;
 
 public class HtmlPageBuilder {
     StringBuilder body = new StringBuilder();
@@ -12,8 +14,12 @@ public class HtmlPageBuilder {
     }
 
     public HtmlPageBuilder appendLink(String url) {
-        selected.append("<a href=\"" + url + "\">" + url + "</a>");
+        selected.append(toHtmlLink(url));
         return this;
+    }
+
+    private String toHtmlLink(String url) {
+        return "<a href=\"" + url + "\">" + url + "</a>";
     }
 
     public String build() {
@@ -29,5 +35,10 @@ public class HtmlPageBuilder {
         out.append("\n").append("     </BODY>");
         out.append("\n").append("</HTML>");
         return out.toString();
+    }
+
+    public HtmlPageBuilder appendLink(List<String> links) {
+        links.forEach(this::appendLink);
+        return this;
     }
 }

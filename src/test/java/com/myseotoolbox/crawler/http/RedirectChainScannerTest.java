@@ -1,5 +1,6 @@
 package com.myseotoolbox.crawler.http;
 
+import com.myseotoolbox.crawler.model.RedirectChain;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -8,9 +9,8 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 
-import static com.myseotoolbox.crawler.TestWebsiteBuilder.givenAWebsite;
+import static com.myseotoolbox.crawler.http.TestWebsiteBuilder.givenAWebsite;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertThat;
@@ -31,9 +31,9 @@ public class RedirectChainScannerTest {
 
         RedirectChainScanner sut = new RedirectChainScanner(mockClient);
 
-        List<HttpResponse> responses = sut.analyseRedirectChain(TEST_WEBSITE_ROOT);
+        RedirectChain chain = sut.analyseRedirectChain(TEST_WEBSITE_ROOT);
 
-        assertThat(responses, contains(el(301, "/dst1"), el(200, "/dst1")));
+        assertThat(chain.getResponses(), contains(el(301, "/dst1"), el(200, "/dst1")));
 
     }
 
@@ -49,9 +49,9 @@ public class RedirectChainScannerTest {
 
         RedirectChainScanner sut = new RedirectChainScanner(mockClient);
 
-        List<HttpResponse> responses = sut.analyseRedirectChain(TEST_WEBSITE_ROOT);
+        RedirectChain chain = sut.analyseRedirectChain(TEST_WEBSITE_ROOT);
 
-        assertThat(responses, contains(
+        assertThat(chain.getResponses(), contains(
                 el(301, "/dst1"),
                 el(302, "/dst2"),
                 el(301, "/dst3"),
@@ -69,9 +69,9 @@ public class RedirectChainScannerTest {
 
         RedirectChainScanner sut = new RedirectChainScanner(mockClient);
 
-        List<HttpResponse> responses = sut.analyseRedirectChain(TEST_WEBSITE_ROOT.resolve("/page"));
+        RedirectChain chain = sut.analyseRedirectChain(TEST_WEBSITE_ROOT.resolve("/page"));
 
-        assertThat(responses, contains(
+        assertThat(chain.getResponses(), contains(
                 el(301, "/dst1"),
                 el(404, "/dst1")));
 
@@ -79,7 +79,7 @@ public class RedirectChainScannerTest {
     }
 
     @Test
-    public void redirectLoopShouldBeHandledGracefully() throws Exception {
+    public void redirectLoopShouldBeHandledGracefully() throws IOException {
 
         HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
                 .withPage("/start").redirectingTo(301, "/dst1")
@@ -89,16 +89,20 @@ public class RedirectChainScannerTest {
 
         RedirectChainScanner sut = new RedirectChainScanner(mockClient);
 
+
         try {
-            sut.analyseRedirectChain(TEST_WEBSITE_ROOT.resolve("/start"));
-            fail("Exception not thrown");
+            RedirectChain chain = sut.analyseRedirectChain(TEST_WEBSITE_ROOT.resolve("/start"));
+            fail("no exception thrown");
         } catch (RedirectLoopException e) {
-            //success!
+            //should have the elements
+            RedirectChain partialChain = e.getPartialChain();
+            assertThat(partialChain.getResponses(), contains(el(301, "/dst1"), el(301, "/dst2"), el(301, "/start")));
         }
+
 
     }
 
-    private Matcher<HttpResponse> el(int status, String uri) {
+    public static Matcher<HttpResponse> el(int status, String uri) {
 
         return new BaseMatcher<HttpResponse>() {
             @Override

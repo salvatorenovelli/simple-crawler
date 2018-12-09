@@ -1,13 +1,12 @@
 package com.myseotoolbox.crawler.http;
 
 
+import com.myseotoolbox.crawler.model.RedirectChain;
+
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 
-import static com.myseotoolbox.crawler.http.HTTPUtils.isRedirect;
+import static com.myseotoolbox.utils.HTTPUtils.isRedirect;
 
 public class RedirectChainScanner {
     private final HttpClient client;
@@ -16,33 +15,31 @@ public class RedirectChainScanner {
         this.client = client;
     }
 
-    public List<HttpResponse> analyseRedirectChain(URI uri) throws RedirectLoopException, IOException, URISyntaxException {
+    public RedirectChain analyseRedirectChain(URI uri) throws RedirectLoopException, IOException {
 
-        List<HttpResponse> curRedirectChain = new ArrayList<>();
+        RedirectChain curRedirectChain = new RedirectChain();
 
         URI curUri = uri;
         HttpResponse curResponse;
 
         do {
+
             curResponse = client.get(curUri);
-            if (isRedirectLoop(curRedirectChain, curUri, curResponse)) throw new RedirectLoopException();
+            if (isRedirectLoop(curRedirectChain, curUri, curResponse)) throw new RedirectLoopException(curRedirectChain);
             curRedirectChain.add(curResponse);
+
             curUri = curResponse.getLocation();
         } while (isRedirect(curResponse.getHttpStatus()));
 
         return curRedirectChain;
     }
 
-    private boolean isRedirectLoop(List<HttpResponse> chain, URI sourceUri, HttpResponse response) {
+    private boolean isRedirectLoop(RedirectChain chain, URI sourceUri, HttpResponse response) {
         return isRedirect(response.getHttpStatus()) &&
                 (
-                        alreadyExistInTheChain(chain, response) || response.getLocation().equals(sourceUri)
+                        chain.hasLocation(response.getLocation()) || response.getLocation().equals(sourceUri)
                 );
     }
 
-    private boolean alreadyExistInTheChain(List<HttpResponse> chain, HttpResponse response) {
-        return chain.stream()
-                .anyMatch(element -> element.getLocation().equals(response.getLocation()));
-    }
 
 }

@@ -1,7 +1,8 @@
-package com.myseotoolbox.crawler;
+package com.myseotoolbox.crawler.http;
 
 
-import com.myseotoolbox.crawler.http.HttpClient;
+import com.myseotoolbox.crawler.Crawler;
+import com.myseotoolbox.crawler.model.WebPage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
@@ -9,18 +10,23 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URI;
+import java.util.List;
 import java.util.function.Consumer;
 
-import static com.myseotoolbox.crawler.TestWebsiteBuilder.givenAWebsite;
+import static com.myseotoolbox.crawler.http.TestWebsiteBuilder.givenAWebsite;
+import static com.myseotoolbox.crawler.http.RedirectChainScannerTest.el;
+import static org.hamcrest.Matchers.contains;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 
+@SuppressWarnings("unchecked")
 @RunWith(MockitoJUnitRunner.class)
 public class CrawlerTest {
 
     public static final URI TEST_WEBSITE_ROOT = URI.create("http://somedomain");
     public static final int ONCE = 1;
-    @Mock private Consumer<CrawledPage> listener;
+    @Mock private Consumer<WebPage> listener;
 
 
     @Test
@@ -120,7 +126,7 @@ public class CrawlerTest {
                 .havingLinkTo("/page2").build();
 
 
-        Crawler sut = new Crawler(listener, mockClient, uri -> !uri.getPath().equals("/page1"));
+        Crawler sut = new Crawler(listener, new RedirectChainScanner(mockClient), uri -> !uri.getPath().equals("/page1"));
         sut.addSeed(TEST_WEBSITE_ROOT);
         sut.run();
 
@@ -130,18 +136,41 @@ public class CrawlerTest {
         verifyNoMoreInteractions(listener);
     }
 
-    private CrawledPage aPageForUri(URI uri) {
+
+    @Test
+    public void redirectChainShouldBePresent() {
+        HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
+                .withRootPage().redirectingTo(301, "/dst1")
+                .build();
+
+        Crawler sut = initCrawler(mockClient);
+        sut.run();
+
+
+        verify(listener).accept(argThat(webPage -> {
+            List<HttpResponse> responses = webPage.getRedirectChain().getResponses();
+            assertThat(responses, contains(el(301, "/dst1"), el(200, "/dst1")));
+            return true;
+        }));
+
+
+    }
+
+    private WebPage aPageForUri(URI uri) {
 
         return ArgumentMatchers.argThat(argument -> {
 //                    System.out.println("Accepting: " + argument.getLocation());
-                    return argument.getLocation().equals(uri);
+                    return argument.getUri().equals(uri);
                 }
         );
     }
 
 
     private Crawler initCrawler(HttpClient mockClient) {
-        Crawler sut = new Crawler(listener, mockClient, uri -> true);
+
+        RedirectChainScanner scanner = new RedirectChainScanner(mockClient);
+
+        Crawler sut = new Crawler(listener, scanner, uri -> true);
         sut.addSeed(TEST_WEBSITE_ROOT);
         return sut;
     }
