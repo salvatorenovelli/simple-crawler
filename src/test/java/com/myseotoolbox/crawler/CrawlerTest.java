@@ -2,7 +2,6 @@ package com.myseotoolbox.crawler;
 
 
 import com.myseotoolbox.crawler.http.HttpClient;
-import com.myseotoolbox.crawler.model.HttpResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
@@ -12,138 +11,138 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.net.URI;
 import java.util.function.Consumer;
 
-import static org.mockito.AdditionalMatchers.not;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static com.myseotoolbox.crawler.TestWebsiteBuilder.givenAWebsite;
+import static org.mockito.Mockito.*;
 
 
 @RunWith(MockitoJUnitRunner.class)
 public class CrawlerTest {
 
-    public static final String TEST_WEBSITE_ROOT = "http://somedomain";
+    public static final URI TEST_WEBSITE_ROOT = URI.create("http://somedomain");
     public static final int ONCE = 1;
-    @Mock private Consumer<HttpResponse> listener;
+    @Mock private Consumer<CrawledPage> listener;
 
 
     @Test
     public void shouldDoBasicCrawling() {
-        HttpClient mockClient = givenWebsite(TEST_WEBSITE_ROOT)
-                .whereTheRootPage()
-                .hasLinkTo("/page1")
-                .hasLinkTo("/page2").build();
+
+        HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
+                .withRootPage()
+                .havingLinkTo("/page1")
+                .havingLinkTo("/page2").build();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
 
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page2"));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT.resolve("/page1")));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT.resolve("/page2")));
     }
 
     @Test
     public void shouldDoNestedCrawling() {
-        HttpClient mockClient = givenWebsite(TEST_WEBSITE_ROOT)
-                .whereTheRootPage()
-                .hasLinkTo("/page1")
+        HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
+                .withRootPage()
+                .havingLinkTo("/page1")
                 .and("/page1")
-                .hasLinkTo("/page2").build();
+                .havingLinkTo("/page2").build();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
 
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page2"));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT.resolve("/page1")));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT.resolve("/page2")));
     }
 
     @Test
     public void shouldVisitExternalLinks() {
-        HttpClient mockClient = givenWebsite(TEST_WEBSITE_ROOT)
-                .whereTheRootPage()
-                .hasLinkTo("http://another-domain").build();
+        HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
+                .withRootPage()
+                .havingLinkTo("http://another-domain").build();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
 
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
-        verify(listener).accept(aResponseForUri("http://another-domain"));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT));
+        verify(listener).accept(aPageForUri(URI.create("http://another-domain")));
     }
 
     @Test
     public void shouldNotVisitSamePageMoreThanOnce() {
-        HttpClient mockClient = givenWebsite(TEST_WEBSITE_ROOT)
-                .whereTheRootPage()
-                .hasLinkTo("/page1")
+        HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
+                .withRootPage()
+                .havingLinkTo("/page1")
                 .and("/page1")
-                .hasLinkTo("/page1").build();
+                .havingLinkTo("/page1").build();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
 
-        verify(listener, times(ONCE)).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
+        verify(listener, times(ONCE)).accept(aPageForUri(TEST_WEBSITE_ROOT.resolve("/page1")));
     }
 
     @Test
     public void shouldNotConsiderFragment() {
-        HttpClient mockClient = givenWebsite(TEST_WEBSITE_ROOT)
-                .whereTheRootPage()
-                .hasLinkTo("/page1#fragment1")
-                .hasLinkTo("/page1#fragment2").build();
+        HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
+                .withRootPage()
+                .havingLinkTo("/page1#fragment1")
+                .havingLinkTo("/page1#fragment2").build();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
 
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
-        verify(listener, times(ONCE)).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1"));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT));
+        verify(listener, times(ONCE)).accept(aPageForUri(TEST_WEBSITE_ROOT.resolve("/page1")));
     }
 
     @Test
     public void shouldConsiderParametersAsDifferentPages() {
-        HttpClient mockClient = givenWebsite(TEST_WEBSITE_ROOT)
-                .whereTheRootPage()
-                .hasLinkTo("/page1?param=A")
-                .hasLinkTo("/page1?param=B").build();
+        HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
+                .withRootPage()
+                .havingLinkTo("/page1?param=A")
+                .havingLinkTo("/page1?param=B").build();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
 
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1?param=A"));
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page1?param=B"));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT.resolve("/page1?param=A")));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT.resolve("/page1?param=B")));
     }
 
 
     @Test
     public void shouldFilter() {
-        HttpClient mockClient = givenWebsite(TEST_WEBSITE_ROOT)
-                .whereTheRootPage()
-                .hasLinkTo("/page1")
-                .hasLinkTo("/page2").build();
+        HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
+                .withRootPage()
+                .havingLinkTo("/page1")
+                .havingLinkTo("/page2").build();
+
 
         Crawler sut = new Crawler(listener, mockClient, uri -> !uri.getPath().equals("/page1"));
-        sut.addSeed(URI.create(TEST_WEBSITE_ROOT));
+        sut.addSeed(TEST_WEBSITE_ROOT);
         sut.run();
 
 
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT));
-        verify(listener).accept(aResponseForUri(TEST_WEBSITE_ROOT + "/page2"));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT));
+        verify(listener).accept(aPageForUri(TEST_WEBSITE_ROOT.resolve("/page2")));
         verifyNoMoreInteractions(listener);
     }
 
-    private HttpResponse aResponseForUri(String uri) {
-        return ArgumentMatchers.argThat(argument -> argument.getLocation().equals(URI.create(uri)));
+    private CrawledPage aPageForUri(URI uri) {
+
+        return ArgumentMatchers.argThat(argument -> {
+//                    System.out.println("Accepting: " + argument.getLocation());
+                    return argument.getLocation().equals(uri);
+                }
+        );
     }
 
-
-    private TestWebsiteBuilder givenWebsite(String domainRoot) {
-        //domainRoot ignored by this implementation of HttpClient. Provided for readability
-        return new TestWebsiteBuilder();
-    }
 
     private Crawler initCrawler(HttpClient mockClient) {
         Crawler sut = new Crawler(listener, mockClient, uri -> true);
-        sut.addSeed(URI.create(TEST_WEBSITE_ROOT));
+        sut.addSeed(TEST_WEBSITE_ROOT);
         return sut;
     }
 }
