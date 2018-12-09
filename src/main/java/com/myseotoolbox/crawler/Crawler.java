@@ -24,7 +24,6 @@ import static com.myseotoolbox.utils.StreamUtils.not;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 
-
 @Slf4j
 public class Crawler {
 

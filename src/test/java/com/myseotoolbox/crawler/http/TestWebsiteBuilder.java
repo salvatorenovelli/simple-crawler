@@ -1,10 +1,11 @@
 package com.myseotoolbox.crawler.http;
 
-import com.google.common.base.Charsets;
+
 import org.apache.commons.io.IOUtils;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,7 +61,7 @@ public class TestWebsiteBuilder {
             if (page != null) {
 
                 String html = new HtmlPageBuilder().body().appendLink(page.links).build();
-                InputStream inputStream = IOUtils.toInputStream(html, Charsets.UTF_8);
+                InputStream inputStream = IOUtils.toInputStream(html, StandardCharsets.UTF_8);
                 return new HttpResponse(uri, page.status, page.location, inputStream);
             } else {
                 return new HttpResponse(uri, 404, null, null);
