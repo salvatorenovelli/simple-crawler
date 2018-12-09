@@ -12,6 +12,7 @@ import org.jsoup.nodes.Element;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.*;
 import java.util.function.Consumer;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 
 import static com.myseotoolbox.utils.StreamUtils.not;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.http.HttpStatus.SC_OK;
+
 
 
 @Slf4j
@@ -52,7 +53,7 @@ public class Crawler {
                 RedirectChain chain = visit(curUri);
                 Document document = null;
 
-                if (chain.getLastResponse().getHttpStatus() == SC_OK) {
+                if (chain.getLastResponse().getHttpStatus() == HttpURLConnection.HTTP_OK) {
                     HttpResponse response = chain.getLastResponse();
                     document = toJsoupDocument(response.getInputStream(), response.getUri());
                     enqueueNewLinks(document);
