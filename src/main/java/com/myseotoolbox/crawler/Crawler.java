@@ -1,9 +1,9 @@
 package com.myseotoolbox.crawler;
 
 import com.myseotoolbox.crawler.http.HttpResponse;
-import com.myseotoolbox.crawler.model.RedirectChain;
 import com.myseotoolbox.crawler.http.RedirectChainScanner;
 import com.myseotoolbox.crawler.http.RedirectLoopException;
+import com.myseotoolbox.crawler.model.RedirectChain;
 import com.myseotoolbox.crawler.model.WebPage;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -11,7 +11,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.*;
@@ -54,7 +53,7 @@ public class Crawler {
 
                 if (chain.getLastResponse().getHttpStatus() == HttpURLConnection.HTTP_OK) {
                     HttpResponse response = chain.getLastResponse();
-                    document = toJsoupDocument(response.getInputStream(), response.getUri());
+                    document = toJsoupDocument(response);
                     enqueueNewLinks(document);
                 }
 
@@ -127,9 +126,9 @@ public class Crawler {
                 .collect(Collectors.toList());
     }
 
-    private Document toJsoupDocument(InputStream inputStream, URI baseUri) {
+    private Document toJsoupDocument(HttpResponse response) {
         try {
-            return Jsoup.parse(inputStream, UTF_8.name(), baseUri.toASCIIString());
+            return Jsoup.parse(response.getInputStream(), UTF_8.name(), response.getUri().toASCIIString());
         } catch (IOException e) {
             //TODO
             throw new UnsupportedOperationException("Not implemented yet!");
