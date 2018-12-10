@@ -15,7 +15,7 @@ public class RedirectChain {
         elements.add(curResponse);
     }
 
-    public boolean hasLocation(URI location) {
+    public boolean contains(URI location) {
         return elements.stream()
                 .anyMatch(element -> element.getLocation().equals(location));
     }

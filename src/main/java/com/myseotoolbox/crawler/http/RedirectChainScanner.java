@@ -37,7 +37,7 @@ public class RedirectChainScanner {
     private boolean isRedirectLoop(RedirectChain chain, URI sourceUri, HttpResponse response) {
         return isRedirect(response.getHttpStatus()) &&
                 (
-                        chain.hasLocation(response.getLocation()) || response.getLocation().equals(sourceUri)
+                        chain.contains(response.getLocation()) || response.getLocation().equals(sourceUri)
                 );
     }
 
