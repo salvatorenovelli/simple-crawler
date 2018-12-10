@@ -52,9 +52,10 @@ public class Crawler {
                 Document document = null;
 
                 if (chain.getLastResponse().getHttpStatus() == HttpURLConnection.HTTP_OK) {
+
                     HttpResponse response = chain.getLastResponse();
-                    document = toJsoupDocument(response);
-                    enqueueNewLinks(document);
+                    List<URI> pageLinks = getOutboundLinks(response);
+                    enqueueNewLinks(pageLinks);
                 }
 
                 listener.accept(new WebPage(curUri, chain, document));
@@ -82,13 +83,8 @@ public class Crawler {
         }
     }
 
-    private void enqueueNewLinks(Document document) {
-
-
-        List<URI> pageLinks = getOutboundLinks(document);
-
+    private void enqueueNewLinks(List<URI> pageLinks) {
         pageLinks.stream()
-                .map(uri -> toAbsoluteUri(document.baseUri(), uri))
                 .map(this::removeFragment)
                 .filter(not(this::duplicate))
                 .filter(shouldVisit)
@@ -105,16 +101,20 @@ public class Crawler {
         return URI.create(uri.toASCIIString().split("#")[0]);
     }
 
-    private URI toAbsoluteUri(String requestUri, URI responseLocation) {
+    private URI toAbsoluteUri(URI requestUri, URI responseLocation) {
         if (responseLocation.isAbsolute()) return responseLocation;
-        return URI.create(requestUri).resolve(responseLocation);
+        return requestUri.resolve(responseLocation);
     }
 
 
-    private List<URI> getOutboundLinks(Document document) {
+    private List<URI> getOutboundLinks(HttpResponse response) {
+
+        Document document = toJsoupDocument(response);
+
         return extractFromTag(document.body(), "a[href]", element -> element.attr("href"))
                 .stream()
                 .map(URI::create)
+                .map(linkUri -> toAbsoluteUri(response.getUri(), linkUri))
                 .collect(Collectors.toList());
     }
 
