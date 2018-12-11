@@ -1,5 +1,6 @@
 package com.myseotoolbox.crawler.model;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.ToString;
 import org.jsoup.nodes.Document;
@@ -8,7 +9,6 @@ import org.jsoup.nodes.Element;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,7 +21,7 @@ public class WebPage {
 
     private final URI sourceUri;
     private final RedirectChain redirectChain;
-    private final Document document;
+    @Getter(AccessLevel.NONE) private final Document document;
 
     public WebPage(URI sourceUri, RedirectChain redirectChain, Document document) {
         this.sourceUri = sourceUri;
@@ -40,6 +40,7 @@ public class WebPage {
                 .collect(Collectors.toList());
     }
 
+
     private URI toAbsoluteUri(URI requestUri, URI responseLocation) {
         if (responseLocation.isAbsolute()) return responseLocation;
         return requestUri.resolve(responseLocation);
@@ -50,5 +51,6 @@ public class WebPage {
                 .select(filter).stream()
                 .map(mapper);
     }
+
 
 }

@@ -158,9 +158,9 @@ public class CrawlerTest {
 
     private WebPage aPageForUri(URI uri) {
 
-        return ArgumentMatchers.argThat(argument -> {
-//                    System.out.println("Accepting: " + argument.getLocation());
-                    return argument.getSourceUri().equals(uri);
+        return ArgumentMatchers.argThat(webPage -> {
+//                    System.out.println("Accepting: " + webPage.getLocation());
+                    return webPage.getSourceUri().equals(uri);
                 }
         );
     }
