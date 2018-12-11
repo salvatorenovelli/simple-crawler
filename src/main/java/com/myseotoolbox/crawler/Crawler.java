@@ -38,6 +38,10 @@ public class Crawler {
         this.shouldVisit = uriFilter;
     }
 
+    public void addSeed(URI uri) {
+        addUriToQueue(uri);
+    }
+
     /**
      * Blocking
      */
@@ -47,40 +51,36 @@ public class Crawler {
             URI curUri = toVisit.poll();
 
             if (shouldVisit.test(curUri)) {
-
-                RedirectChain chain = visit(curUri);
-                Document document = null;
-
-                if (chain.getLastResponse().getHttpStatus() == HttpURLConnection.HTTP_OK) {
-
-                    HttpResponse response = chain.getLastResponse();
-                    List<URI> pageLinks = getOutboundLinks(response);
-                    enqueueNewLinks(pageLinks);
+                try {
+                    visited.add(curUri);
+                    WebPage page = visit(curUri);
+                    listener.accept(page);
+                } catch (RedirectLoopException | IOException e) {
+                    e.printStackTrace();
+                    //TODO:
+                    throw new UnsupportedOperationException("Not implemented yet!" + e);
                 }
-
-                listener.accept(new WebPage(curUri, chain, document));
             }
         }
 
     }
 
-    public void addSeed(URI uri) {
-        addUriToQueue(uri);
+    private WebPage visit(URI curUri) throws RedirectLoopException, IOException {
+        RedirectChain chain = scanner.analyseRedirectChain(curUri);
+        Document document = null;
+
+        if (chain.getLastResponse().getHttpStatus() == HttpURLConnection.HTTP_OK) {
+            HttpResponse response = chain.getLastResponse();
+            document = toJsoupDocument(response);
+            List<URI> pageLinks = getOutboundLinks(document, response.getUri());
+            enqueueNewLinks(pageLinks);
+        }
+
+        return new WebPage(curUri, chain, document);
     }
 
     private void addUriToQueue(URI uri) {
         toVisit.add(removeFragment(uri));
-    }
-
-    private RedirectChain visit(URI uri) {
-        try {
-            visited.add(uri);
-            return scanner.analyseRedirectChain(uri);
-        } catch (IOException | RedirectLoopException e) {
-            e.printStackTrace();
-            //TODO:
-            throw new UnsupportedOperationException("Not implemented yet!" + e);
-        }
     }
 
     private void enqueueNewLinks(List<URI> pageLinks) {
@@ -90,7 +90,6 @@ public class Crawler {
                 .filter(shouldVisit)
                 .forEach(this::addUriToQueue);
     }
-
 
     private boolean duplicate(URI uri) {
         return visited.contains(uri) || toVisit.contains(uri);
@@ -106,18 +105,15 @@ public class Crawler {
         return requestUri.resolve(responseLocation);
     }
 
+    private List<URI> getOutboundLinks(Document document, URI uri) {
 
-    private List<URI> getOutboundLinks(HttpResponse response) {
-
-        Document document = toJsoupDocument(response);
 
         return extractFromTag(document.body(), "a[href]", element -> element.attr("href"))
                 .stream()
                 .map(URI::create)
-                .map(linkUri -> toAbsoluteUri(response.getUri(), linkUri))
+                .map(linkUri -> toAbsoluteUri(uri, linkUri))
                 .collect(Collectors.toList());
     }
-
 
     private static List<String> extractFromTag(Element element, String filter, Function<Element, String> mapper) {
         return element
@@ -126,12 +122,7 @@ public class Crawler {
                 .collect(Collectors.toList());
     }
 
-    private Document toJsoupDocument(HttpResponse response) {
-        try {
-            return Jsoup.parse(response.getInputStream(), UTF_8.name(), response.getUri().toASCIIString());
-        } catch (IOException e) {
-            //TODO
-            throw new UnsupportedOperationException("Not implemented yet!");
-        }
+    private Document toJsoupDocument(HttpResponse response) throws IOException {
+        return Jsoup.parse(response.getInputStream(), UTF_8.name(), response.getUri().toASCIIString());
     }
 }
