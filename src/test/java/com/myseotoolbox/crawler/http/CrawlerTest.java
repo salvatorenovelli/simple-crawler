@@ -160,7 +160,7 @@ public class CrawlerTest {
 
         return ArgumentMatchers.argThat(argument -> {
 //                    System.out.println("Accepting: " + argument.getLocation());
-                    return argument.getUri().equals(uri);
+                    return argument.getSourceUri().equals(uri);
                 }
         );
     }

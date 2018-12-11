@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.myseotoolbox.utils.StreamUtils.not;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -52,8 +53,12 @@ public class Crawler {
 
             if (shouldVisit.test(curUri)) {
                 try {
-                    visited.add(curUri);
+
                     WebPage page = visit(curUri);
+                    visited.add(curUri);
+                    List<URI> pageLinks = page.getOutboundLinks();
+                    enqueueNewLinks(pageLinks);
+
                     listener.accept(page);
                 } catch (RedirectLoopException | IOException e) {
                     e.printStackTrace();
@@ -72,8 +77,6 @@ public class Crawler {
         if (chain.getLastResponse().getHttpStatus() == HttpURLConnection.HTTP_OK) {
             HttpResponse response = chain.getLastResponse();
             document = toJsoupDocument(response);
-            List<URI> pageLinks = getOutboundLinks(document, response.getUri());
-            enqueueNewLinks(pageLinks);
         }
 
         return new WebPage(curUri, chain, document);
@@ -100,27 +103,6 @@ public class Crawler {
         return URI.create(uri.toASCIIString().split("#")[0]);
     }
 
-    private URI toAbsoluteUri(URI requestUri, URI responseLocation) {
-        if (responseLocation.isAbsolute()) return responseLocation;
-        return requestUri.resolve(responseLocation);
-    }
-
-    private List<URI> getOutboundLinks(Document document, URI uri) {
-
-
-        return extractFromTag(document.body(), "a[href]", element -> element.attr("href"))
-                .stream()
-                .map(URI::create)
-                .map(linkUri -> toAbsoluteUri(uri, linkUri))
-                .collect(Collectors.toList());
-    }
-
-    private static List<String> extractFromTag(Element element, String filter, Function<Element, String> mapper) {
-        return element
-                .select(filter).stream()
-                .map(mapper)
-                .collect(Collectors.toList());
-    }
 
     private Document toJsoupDocument(HttpResponse response) throws IOException {
         return Jsoup.parse(response.getInputStream(), UTF_8.name(), response.getUri().toASCIIString());
