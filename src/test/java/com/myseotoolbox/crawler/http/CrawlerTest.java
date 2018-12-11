@@ -126,7 +126,7 @@ public class CrawlerTest {
                 .havingLinkTo("/page2").build();
 
 
-        Crawler sut = new Crawler(listener, new RedirectChainScanner(mockClient), uri -> !uri.getPath().equals("/page1"));
+        Crawler sut = new Crawler(listener, new WebPageReader(new RedirectChainScanner(mockClient)), uri -> !uri.getPath().equals("/page1"));
         sut.addSeed(TEST_WEBSITE_ROOT);
         sut.run();
 
@@ -170,7 +170,7 @@ public class CrawlerTest {
 
         RedirectChainScanner scanner = new RedirectChainScanner(mockClient);
 
-        Crawler sut = new Crawler(listener, scanner, uri -> true);
+        Crawler sut = new Crawler(listener, new WebPageReader(scanner), uri -> true);
         sut.addSeed(TEST_WEBSITE_ROOT);
         return sut;
     }
