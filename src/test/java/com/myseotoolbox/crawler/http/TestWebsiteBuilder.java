@@ -54,12 +54,11 @@ public class TestWebsiteBuilder {
         return this;
     }
 
-    public HttpClient build() {
+    public HttpClient buildMockClient() {
         HttpClient mockClient = uri -> {
             Page page = pages.get(uri.getPath());
 
             if (page != null) {
-
                 String html = new HtmlPageBuilder().body().appendLink(page.links).build();
                 InputStream inputStream = IOUtils.toInputStream(html, StandardCharsets.UTF_8);
                 return new HttpResponse(uri, page.status, page.location, inputStream);

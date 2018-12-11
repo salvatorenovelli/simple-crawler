@@ -10,11 +10,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URI;
-import java.util.List;
 import java.util.function.Consumer;
 
-import static com.myseotoolbox.crawler.http.TestWebsiteBuilder.givenAWebsite;
 import static com.myseotoolbox.crawler.http.RedirectChainScannerTest.el;
+import static com.myseotoolbox.crawler.http.TestWebsiteBuilder.givenAWebsite;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
@@ -35,7 +34,7 @@ public class CrawlerTest {
         HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
                 .withRootPage()
                 .havingLinkTo("/page1")
-                .havingLinkTo("/page2").build();
+                .havingLinkTo("/page2").buildMockClient();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
@@ -51,7 +50,7 @@ public class CrawlerTest {
                 .withRootPage()
                 .havingLinkTo("/page1")
                 .and("/page1")
-                .havingLinkTo("/page2").build();
+                .havingLinkTo("/page2").buildMockClient();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
@@ -65,7 +64,7 @@ public class CrawlerTest {
     public void shouldVisitExternalLinks() {
         HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
                 .withRootPage()
-                .havingLinkTo("http://another-domain").build();
+                .havingLinkTo("http://another-domain").buildMockClient();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
@@ -80,7 +79,7 @@ public class CrawlerTest {
                 .withRootPage()
                 .havingLinkTo("/page1")
                 .and("/page1")
-                .havingLinkTo("/page1").build();
+                .havingLinkTo("/page1").buildMockClient();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
@@ -93,7 +92,7 @@ public class CrawlerTest {
         HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
                 .withRootPage()
                 .havingLinkTo("/page1#fragment1")
-                .havingLinkTo("/page1#fragment2").build();
+                .havingLinkTo("/page1#fragment2").buildMockClient();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
@@ -107,7 +106,7 @@ public class CrawlerTest {
         HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
                 .withRootPage()
                 .havingLinkTo("/page1?param=A")
-                .havingLinkTo("/page1?param=B").build();
+                .havingLinkTo("/page1?param=B").buildMockClient();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
@@ -123,10 +122,10 @@ public class CrawlerTest {
         HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
                 .withRootPage()
                 .havingLinkTo("/page1")
-                .havingLinkTo("/page2").build();
+                .havingLinkTo("/page2").buildMockClient();
 
 
-        Crawler sut = new Crawler(listener, new WebPageReader(new RedirectChainScanner(mockClient)), uri -> !uri.getPath().equals("/page1"));
+        Crawler sut = new Crawler(listener, new WebPageReader(mockClient), uri -> !uri.getPath().equals("/page1"));
         sut.addSeed(TEST_WEBSITE_ROOT);
         sut.run();
 
@@ -141,15 +140,15 @@ public class CrawlerTest {
     public void redirectChainShouldBePresent() {
         HttpClient mockClient = givenAWebsite(TEST_WEBSITE_ROOT)
                 .withRootPage().redirectingTo(301, "/dst1")
-                .build();
+                .buildMockClient();
 
         Crawler sut = initCrawler(mockClient);
         sut.run();
 
 
         verify(listener).accept(argThat(webPage -> {
-            List<HttpResponse> responses = webPage.getRedirectChain().getResponses();
-            assertThat(responses, contains(el(301, "/dst1"), el(200, "/dst1")));
+
+            assertThat(webPage.getRedirectChain(), contains(el(301, "/dst1"), el(200, "/dst1")));
             return true;
         }));
 
@@ -159,7 +158,7 @@ public class CrawlerTest {
     private WebPage aPageForUri(URI uri) {
 
         return ArgumentMatchers.argThat(webPage -> {
-//                    System.out.println("Accepting: " + webPage.getLocation());
+//                    System.out.println("Accepting: " + webPage.getSourceUri());
                     return webPage.getSourceUri().equals(uri);
                 }
         );
@@ -168,9 +167,7 @@ public class CrawlerTest {
 
     private Crawler initCrawler(HttpClient mockClient) {
 
-        RedirectChainScanner scanner = new RedirectChainScanner(mockClient);
-
-        Crawler sut = new Crawler(listener, new WebPageReader(scanner), uri -> true);
+        Crawler sut = new Crawler(listener, new WebPageReader(mockClient), uri -> true);
         sut.addSeed(TEST_WEBSITE_ROOT);
         return sut;
     }
