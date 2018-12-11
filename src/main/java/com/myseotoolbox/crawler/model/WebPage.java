@@ -29,26 +29,20 @@ public class WebPage {
         this.document = document;
     }
 
-    public Optional<Document> getDocument() {
-        return Optional.ofNullable(document);
-    }
-
-
-    private URI toAbsoluteUri(URI requestUri, URI responseLocation) {
-        if (responseLocation.isAbsolute()) return responseLocation;
-        return requestUri.resolve(responseLocation);
-    }
-
     public List<URI> getOutboundLinks() {
-
         if (document == null) return Collections.emptyList();
+
         URI baseUri = redirectChain.getLastResponse().getUri();
 
         return extractFromTag(document.body(), "a[href]", element -> element.attr("href"))
                 .map(URI::create)
                 .map(linkUri -> toAbsoluteUri(baseUri, linkUri))
                 .collect(Collectors.toList());
+    }
 
+    private URI toAbsoluteUri(URI requestUri, URI responseLocation) {
+        if (responseLocation.isAbsolute()) return responseLocation;
+        return requestUri.resolve(responseLocation);
     }
 
     private static Stream<String> extractFromTag(Element element, String filter, Function<Element, String> mapper) {
@@ -56,6 +50,5 @@ public class WebPage {
                 .select(filter).stream()
                 .map(mapper);
     }
-
 
 }
