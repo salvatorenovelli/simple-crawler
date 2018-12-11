@@ -1,17 +1,23 @@
 package com.myseotoolbox.crawler.model;
 
+import com.myseotoolbox.crawler.http.HttpResponse;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.ToString;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 @ToString
@@ -23,10 +29,21 @@ public class WebPage {
     private final RedirectChain redirectChain;
     @Getter(AccessLevel.NONE) private final Document document;
 
-    public WebPage(URI sourceUri, RedirectChain redirectChain, Document document) {
+    public WebPage(URI sourceUri, RedirectChain redirectChain) throws IOException {
         this.sourceUri = sourceUri;
         this.redirectChain = redirectChain;
-        this.document = document;
+        this.document = buildDocument(redirectChain);
+    }
+
+    private Document buildDocument(RedirectChain chain) throws IOException {
+
+        if (chain.getLastResponse().getHttpStatus() != HttpURLConnection.HTTP_OK) {
+            return null;
+        }
+
+        HttpResponse response = chain.getLastResponse();
+
+        return Jsoup.parse(response.getInputStream(), UTF_8.name(), response.getUri().toASCIIString());
     }
 
     public List<URI> getOutboundLinks() {
@@ -51,6 +68,5 @@ public class WebPage {
                 .select(filter).stream()
                 .map(mapper);
     }
-
 
 }
