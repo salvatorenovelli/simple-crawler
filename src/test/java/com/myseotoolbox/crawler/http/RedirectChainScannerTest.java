@@ -108,7 +108,7 @@ public class RedirectChainScannerTest {
             @Override
             public boolean matches(Object item) {
                 HttpResponse element = (HttpResponse) item;
-                return element.getHttpStatus() == status && URI.create(uri).equals(element.getLocation());
+                return element.getHttpStatus() == status && URI.create(uri).equals(element.getLocationHeader());
             }
 
             @Override

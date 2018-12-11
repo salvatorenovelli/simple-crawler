@@ -43,13 +43,13 @@ public class WebPage {
 
         HttpResponse response = chain.getLastResponse();
 
-        return Jsoup.parse(response.getInputStream(), UTF_8.name(), response.getUri().toASCIIString());
+        return Jsoup.parse(response.getInputStream(), UTF_8.name(), response.getSourceUri().toASCIIString());
     }
 
     public List<URI> getOutboundLinks() {
         if (document == null) return Collections.emptyList();
 
-        URI baseUri = redirectChain.getLastResponse().getUri();
+        URI baseUri = redirectChain.getLastResponse().getSourceUri();
 
         return extractFromTag(document.body(), "a[href]", element -> element.attr("href"))
                 .map(URI::create)

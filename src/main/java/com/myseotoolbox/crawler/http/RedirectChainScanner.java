@@ -28,7 +28,7 @@ public class RedirectChainScanner {
             if (isRedirectLoop(curRedirectChain, curUri, curResponse)) throw new RedirectLoopException(curRedirectChain);
             curRedirectChain.add(curResponse);
 
-            curUri = curResponse.getLocation();
+            curUri = curResponse.getLocationHeader();
         } while (isRedirect(curResponse.getHttpStatus()));
 
         return curRedirectChain;
@@ -37,7 +37,7 @@ public class RedirectChainScanner {
     private boolean isRedirectLoop(RedirectChain chain, URI sourceUri, HttpResponse response) {
         return isRedirect(response.getHttpStatus()) &&
                 (
-                        chain.contains(response.getLocation()) || response.getLocation().equals(sourceUri)
+                        chain.contains(response.getLocationHeader()) || response.getLocationHeader().equals(sourceUri)
                 );
     }
 

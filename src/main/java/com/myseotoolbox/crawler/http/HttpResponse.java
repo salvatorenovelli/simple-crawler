@@ -10,15 +10,15 @@ import java.net.URI;
 @ToString
 public class HttpResponse {
 
-    private final URI uri;
+    private final URI sourceUri;
     private final int httpStatus;
-    private final URI location;
+    private final URI locationHeader;
     private final InputStream inputStream;
 
-    public HttpResponse(URI uri, int httpStatus, URI location, InputStream inputStream) {
-        this.uri = uri;
+    public HttpResponse(URI sourceUri, int httpStatus, URI locationHeader, InputStream inputStream) {
+        this.sourceUri = sourceUri;
         this.httpStatus = httpStatus;
-        this.location = location;
+        this.locationHeader = locationHeader;
         this.inputStream = inputStream;
     }
 

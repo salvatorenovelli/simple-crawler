@@ -17,7 +17,7 @@ public class RedirectChain {
 
     public boolean contains(URI location) {
         return elements.stream()
-                .anyMatch(element -> element.getLocation().equals(location));
+                .anyMatch(element -> element.getLocationHeader().equals(location));
     }
 
     public List<HttpResponse> getResponses() {
